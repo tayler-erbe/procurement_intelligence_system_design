@@ -3,383 +3,617 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BTAA Procurement Intelligence — System Architecture</title>
+<title>BTAA Procurement Intelligence — Spending Trends</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;500&display=swap');
+
 :root {
-  --navy:#1F4E79; --mid:#2E75B6; --green:#548235; --amber:#B8860B;
-  --body:#3D3D3D; --muted:#7A8999; --border:#D0DCE9; --bg:#F4F7FB;
-  --mono:'JetBrains Mono',monospace; --sans:'Inter',system-ui,sans-serif;
-}
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:var(--sans); background:var(--bg); color:var(--body); min-height:100vh; }
+  --navy:   #1F4E79;
+  --mid:    #2E75B6;
+  --steel:  #4A90C4;
+  --light:  #D6E4F0;
+  --frost:  #EBF3FA;
+  --green:  #548235;
+  --green2: #6AB04C;
+  --red:    #C00000;
+  --amber:  #B8860B;
+  --body:   #3D3D3D;
+  --muted:  #7A8999;
+  --border: #D0DCE9;
+  --bg:     #F2F6FA;
+  --white:  #FFFFFF;
+  --mono:   'JetBrains Mono', monospace;
+  --sans:   'Inter', system-ui, sans-serif;
+  --r:      10px;
+  --sh:     0 2px 14px rgba(31,78,121,0.09);
 
-.page-header {
-  background:var(--navy);
-  padding:20px 40px;
-  display:flex; align-items:center; justify-content:space-between;
-  box-shadow:0 2px 16px rgba(31,78,121,.35);
-}
-.page-header h1 { font-size:17px; font-weight:500; color:#fff; }
-.page-header p  { font-size:12px; color:rgba(255,255,255,.5); margin-top:3px; }
-.badge { font-family:var(--mono); font-size:11px; background:var(--mid); color:#fff; padding:4px 10px; border-radius:6px; }
-
-.diagram-wrap {
-  max-width:900px;
-  margin:32px auto;
-  padding:0 24px 60px;
-}
-
-.diagram-card {
-  background:#fff;
-  border-radius:12px;
-  border:1px solid var(--border);
-  box-shadow:0 2px 16px rgba(31,78,121,.08);
-  padding:32px;
-  margin-bottom:24px;
+  /* distributor colors */
+  --neta:   #2E75B6;
+  --vwr:    #1F4E79;
+  --fisher: #548235;
+  --dot:    #7B4E2D;
 }
 
-.diagram-title {
-  font-size:16px; font-weight:500; color:var(--navy);
-  margin-bottom:4px;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--body); min-height: 100vh; }
+
+/* ── Header ── */
+.header {
+  background: var(--navy);
+  padding: 0 40px;
+  height: 56px;
+  display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 16px rgba(31,78,121,0.4);
 }
-.diagram-sub {
-  font-size:13px; color:var(--muted); font-weight:300;
-  margin-bottom:24px; line-height:1.5;
+.hmark { font-family: var(--mono); font-size: 12px; background: var(--mid); color: white; padding: 4px 9px; border-radius: 6px; }
+.htitle { font-size: 15px; font-weight: 500; color: white; }
+.hsub { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 300; margin-left: 4px; }
+.hright { margin-left: auto; display: flex; gap: 20px; align-items: center; }
+.hnav a { font-size: 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-weight: 400; transition: color .15s; }
+.hnav a:hover { color: white; }
+.hstatus { font-size: 11px; font-family: var(--mono); color: rgba(255,255,255,0.5); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #555; display: inline-block; margin-right: 5px; }
+.dot.on { background: #6BCB77; box-shadow: 0 0 5px #6BCB77; }
+.dot.off { background: var(--red); }
+
+/* ── Layout ── */
+.page { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+
+/* ── Hero stats ── */
+.hero {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: white; border-radius: var(--r);
+  border: 1px solid var(--border); box-shadow: var(--sh);
+  padding: 22px 24px;
+}
+.stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-family: var(--mono); margin-bottom: 6px; }
+.stat-value { font-size: 32px; font-weight: 600; color: var(--navy); letter-spacing: -1.5px; font-family: var(--mono); line-height: 1; margin-bottom: 4px; }
+.stat-sub { font-size: 12px; color: var(--muted); font-weight: 300; }
+.stat-card.green .stat-value { color: var(--green); }
+.stat-card.amber .stat-value { color: var(--amber); }
+
+/* ── Section headers ── */
+.section { margin-bottom: 28px; }
+.section-head {
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--light);
+}
+.section-title { font-size: 17px; font-weight: 600; color: var(--navy); }
+.section-sub { font-size: 13px; color: var(--muted); font-weight: 300; }
+
+/* ── Cards ── */
+.card {
+  background: white; border-radius: var(--r);
+  border: 1px solid var(--border); box-shadow: var(--sh);
+  padding: 24px;
+}
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+
+/* ── Chart containers ── */
+.chart-wrap { position: relative; height: 240px; }
+canvas { width: 100% !important; }
+
+/* ── Savings bar chart ── */
+.bar-list { display: flex; flex-direction: column; gap: 10px; }
+.bar-item { display: flex; align-items: center; gap: 10px; }
+.bar-label { font-size: 12px; color: var(--body); width: 260px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 22px; background: var(--frost); border-radius: 4px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; background: linear-gradient(90deg, var(--navy), var(--mid)); }
+.bar-fill.green { background: linear-gradient(90deg, var(--green), var(--green2)); }
+.bar-val { font-size: 12px; font-family: var(--mono); color: var(--navy); font-weight: 500; width: 80px; text-align: right; flex-shrink: 0; }
+.bar-pct { font-size: 11px; color: var(--muted); font-family: var(--mono); width: 42px; text-align: right; flex-shrink: 0; }
+
+/* ── Top opportunities table ── */
+.opp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.opp-table thead th {
+  background: var(--navy); color: white; padding: 9px 12px;
+  text-align: left; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+.opp-table tbody tr:nth-child(even) { background: var(--frost); }
+.opp-table tbody tr:hover { background: var(--light); cursor: pointer; }
+.opp-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.opp-table td.num { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.opp-table td.savings { font-family: var(--mono); color: var(--green); font-weight: 600; text-align: right; }
+.spread-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-family: var(--mono); font-weight: 500;
+}
+.spread-hi  { background: rgba(192,0,0,.12);   color: var(--red); }
+.spread-mid { background: rgba(184,134,11,.12); color: var(--amber); }
+.spread-lo  { background: rgba(84,130,53,.12);  color: var(--green); }
+
+/* ── Distributor breakdown ── */
+.dist-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.dist-row:last-child { border-bottom: none; }
+.dist-badge { width: 60px; text-align: center; padding: 3px 0; border-radius: 5px; font-size: 11px; font-weight: 600; font-family: var(--mono); color: white; flex-shrink: 0; }
+.dist-Neta   { background: var(--neta); }
+.dist-VWR    { background: var(--vwr); }
+.dist-Fisher { background: var(--fisher); }
+.dist-DOT    { background: var(--dot); }
+.dist-info { flex: 1; }
+.dist-name { font-size: 13px; font-weight: 500; color: var(--navy); }
+.dist-meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.dist-share-track { flex: 1; height: 8px; background: var(--frost); border-radius: 4px; overflow: hidden; }
+.dist-share-fill { height: 100%; border-radius: 4px; }
+.dist-pct { font-size: 12px; font-family: var(--mono); color: var(--body); font-weight: 500; width: 40px; text-align: right; }
+
+/* ── Insight cards ── */
+.insight-list { display: flex; flex-direction: column; gap: 10px; }
+.insight {
+  padding: 12px 16px; border-radius: 8px;
+  border-left: 4px solid var(--mid);
+  background: var(--frost);
+  font-size: 13px; line-height: 1.5; color: var(--body);
+}
+.insight.warn { border-left-color: var(--amber); background: #fffbf0; }
+.insight.good { border-left-color: var(--green); background: #f2f9ee; }
+.insight strong { color: var(--navy); }
+
+/* ── Loading state ── */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(31,78,121,0.85);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000; gap: 20px;
+}
+.loading-overlay.hidden { display: none; }
+.spin { width: 44px; height: 44px; border: 4px solid rgba(255,255,255,.2); border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-text { color: white; font-size: 14px; font-weight: 300; }
+.load-sub { color: rgba(255,255,255,.6); font-size: 12px; font-family: var(--mono); }
+
+/* ── Offline state ── */
+.offline-banner {
+  background: #fff8e1; border: 1px solid #f0d060; border-radius: 8px;
+  padding: 16px 20px; margin-bottom: 24px; display: none;
+  font-size: 13px; color: var(--amber); line-height: 1.6;
 }
 
-svg .t  { font-family:'Inter',system-ui,sans-serif; font-size:14px; fill:var(--body); }
-svg .ts { font-family:'Inter',system-ui,sans-serif; font-size:12px; fill:var(--muted); }
-svg .th { font-family:'Inter',system-ui,sans-serif; font-size:14px; font-weight:500; fill:var(--body); }
+/* ── Footer ── */
+.footer { text-align: center; padding: 40px 0 0; font-size: 12px; color: var(--muted); font-weight: 300; }
 
-/* Color ramps */
-svg .c-teal   rect, svg .c-teal   circle { fill:#E1F5EE; stroke:#0F6E56; }
-svg .c-teal   .t, svg .c-teal .th { fill:#085041; }
-svg .c-teal   .ts { fill:#0F6E56; }
-svg .c-blue   rect, svg .c-blue   circle { fill:#E6F1FB; stroke:#185FA5; }
-svg .c-blue   .t, svg .c-blue .th { fill:#0C447C; }
-svg .c-blue   .ts { fill:#185FA5; }
-svg .c-purple rect, svg .c-purple circle { fill:#EEEDFE; stroke:#534AB7; }
-svg .c-purple .t, svg .c-purple .th { fill:#3C3489; }
-svg .c-purple .ts { fill:#534AB7; }
-svg .c-amber  rect, svg .c-amber  circle { fill:#FAEEDA; stroke:#854F0B; }
-svg .c-amber  .t, svg .c-amber .th { fill:#633806; }
-svg .c-amber  .ts { fill:#854F0B; }
-svg .c-green  rect, svg .c-green  circle { fill:#EAF3DE; stroke:#3B6D11; }
-svg .c-green  .t, svg .c-green .th { fill:#27500A; }
-svg .c-green  .ts { fill:#3B6D11; }
-svg .c-gray   rect, svg .c-gray   circle { fill:#F1EFE8; stroke:#5F5E5A; }
-svg .c-gray   .t, svg .c-gray .th { fill:#2C2C2A; }
-svg .c-gray   .ts { fill:#5F5E5A; }
-svg .c-coral  rect, svg .c-coral  circle { fill:#FAECE7; stroke:#993C1D; }
-svg .c-coral  .t, svg .c-coral .th { fill:#4A1B0C; }
-svg .c-coral  .ts { fill:#712B13; }
-
-svg .node { cursor:pointer; }
-svg .node:hover rect, svg .node:hover circle { opacity:0.85; }
-svg .arr  { stroke:var(--muted); fill:none; stroke-width:1.5; }
-
-/* Legend */
-.legend {
-  display:flex; flex-wrap:wrap; gap:12px;
-  padding:16px 20px;
-  background:var(--bg); border-radius:8px;
-  border:1px solid var(--border);
-  margin-top:20px;
-}
-.legend-item { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--body); }
-.legend-swatch { width:14px; height:14px; border-radius:4px; flex-shrink:0; }
-.sw-teal   { background:#E1F5EE; border:1.5px solid #0F6E56; }
-.sw-blue   { background:#E6F1FB; border:1.5px solid #185FA5; }
-.sw-purple { background:#EEEDFE; border:1.5px solid #534AB7; }
-.sw-amber  { background:#FAEEDA; border:1.5px solid #854F0B; }
-.sw-green  { background:#EAF3DE; border:1.5px solid #3B6D11; }
-.sw-gray   { background:#F1EFE8; border:1.5px solid #5F5E5A; }
-
-.footnote {
-  text-align:center; font-size:12px; color:var(--muted);
-  margin-top:16px; font-style:italic;
-}
-
-@media print {
-  body { background:#fff; }
-  .page-header { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .diagram-card { box-shadow:none; border:1px solid #ddd; }
+@media (max-width: 900px) {
+  .hero { grid-template-columns: repeat(2, 1fr); }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .bar-label { width: 160px; }
 }
 </style>
 </head>
 <body>
 
-<div class="page-header">
-  <div>
-    <h1>BTAA Procurement Intelligence — System Architecture</h1>
-    <p>University of Illinois Urbana-Champaign · Jaggaer / UPay · Author: Tayler Erbe · June 2025</p>
-  </div>
-  <span class="badge">BTAA</span>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spin"></div>
+  <div class="load-text">Loading procurement data...</div>
+  <div class="load-sub" id="loadStep">Connecting to API</div>
 </div>
 
-<div class="diagram-wrap">
-
-  <div class="diagram-card">
-    <div class="diagram-title">Full System Architecture &amp; User Flow</div>
-    <div class="diagram-sub">
-      Data ingestion → production deployment → three user search paths → three-tier AI comparison pipeline →
-      trends dashboard with feedback loop → catalog refresh cycle.
+<div class="header">
+  <span class="hmark">BTAA</span>
+  <div class="htitle">Procurement Intelligence <span class="hsub">/ Spending Trends</span></div>
+  <div class="hright">
+    <nav class="hnav" style="display:flex;gap:20px">
+      <a href="#overview">Overview</a>
+      <a href="#opportunities">Opportunities</a>
+      <a href="#distributors">Distributors</a>
+      <a href="#insights">Insights</a>
+    </nav>
+    <div class="hstatus">
+      <span class="dot" id="apiDot"></span>
+      <span id="apiLabel">connecting...</span>
     </div>
+  </div>
+</div>
 
-    <svg width="100%" viewBox="0 0 680 1820" role="img">
-      <title>BTAA Procurement Intelligence System Architecture</title>
-      <desc>Comprehensive systems diagram showing data ingestion, Azure deployment, three user search paths, AI comparison pipeline, trends dashboard, and catalog refresh cycle.</desc>
-      <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </marker>
-      </defs>
+<div class="page">
 
-      <!-- Section: Data & Deployment -->
-      <text class="ts" x="340" y="28" text-anchor="middle" font-weight="500">Data ingestion &amp; production deployment</text>
-      <line x1="40" y1="34" x2="640" y2="34" stroke="#D0DCE9" stroke-width="0.5"/>
+  <div class="offline-banner" id="offlineBanner">
+    <strong>API offline.</strong> Start the FastAPI server to load live data:
+    <code>uvicorn btaa_api.main:app --port 8080</code><br>
+    Showing sample data below for reference.
+  </div>
 
-      <!-- Data sources -->
-      <g class="node c-teal"><rect x="40" y="48" width="136" height="56" rx="8" stroke-width="0.5"/>
-        <text class="th" x="108" y="70" text-anchor="middle" dominant-baseline="central">Jaggaer / UPay</text>
-        <text class="ts" x="108" y="88" text-anchor="middle" dominant-baseline="central">Catalog exports</text></g>
-      <g class="node c-teal"><rect x="196" y="48" width="136" height="56" rx="8" stroke-width="0.5"/>
-        <text class="th" x="264" y="70" text-anchor="middle" dominant-baseline="central">DOT + Neta</text>
-        <text class="ts" x="264" y="88" text-anchor="middle" dominant-baseline="central">Prior-year quantities</text></g>
-      <g class="node c-gray"><rect x="352" y="48" width="136" height="56" rx="8" stroke-width="0.5"/>
-        <text class="th" x="420" y="70" text-anchor="middle" dominant-baseline="central">Fisher + VWR</text>
-        <text class="ts" x="420" y="88" text-anchor="middle" dominant-baseline="central">Catalog only — no qty</text></g>
-      <g class="node c-amber"><rect x="508" y="48" width="132" height="56" rx="8" stroke-width="0.5"/>
-        <text class="th" x="574" y="70" text-anchor="middle" dominant-baseline="central">qsu / uom fields</text>
-        <text class="ts" x="574" y="88" text-anchor="middle" dominant-baseline="central">Pack-size normalization</text></g>
-
-      <line x1="108" y1="104" x2="108" y2="134" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="264" y1="104" x2="200" y2="134" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="420" y1="104" x2="320" y2="134" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="574" y1="104" x2="440" y2="134" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- EDA -->
-      <g class="node c-purple"><rect x="80" y="134" width="400" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="280" y="154" text-anchor="middle" dominant-baseline="central">EDA notebook — Stages 1–10</text>
-        <text class="ts" x="280" y="172" text-anchor="middle" dominant-baseline="central">Normalize, merge, unit-price → unified.parquet (6M rows)</text></g>
-
-      <line x1="280" y1="186" x2="280" y2="210" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Build artifacts -->
-      <g class="node c-blue"><rect x="40" y="210" width="168" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="124" y="230" text-anchor="middle" dominant-baseline="central">Stage 11 — FAISS</text>
-        <text class="ts" x="124" y="248" text-anchor="middle" dominant-baseline="central">5.19M vectors, 8GB index</text></g>
-      <g class="node c-blue"><rect x="226" y="210" width="168" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="310" y="230" text-anchor="middle" dominant-baseline="central">Stage 12 — Exact dict</text>
-        <text class="ts" x="310" y="248" text-anchor="middle" dominant-baseline="central">42,052 cross-distributor keys</text></g>
-      <g class="node c-blue"><rect x="412" y="210" width="168" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="496" y="230" text-anchor="middle" dominant-baseline="central">Stages 18–19 — Units</text>
-        <text class="ts" x="496" y="248" text-anchor="middle" dominant-baseline="central">$161K savings, parquet saved</text></g>
-
-      <line x1="124" y1="262" x2="200" y2="296" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="310" y1="262" x2="310" y2="296" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="496" y1="262" x2="420" y2="296" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Azure container -->
-      <rect x="40" y="296" width="600" height="108" rx="12" fill="none" stroke="#D0DCE9" stroke-width="0.5" stroke-dasharray="6 4"/>
-      <text class="ts" x="56" y="316" font-weight="500" fill="#888">Azure App Service (B3) — production</text>
-
-      <g class="node c-blue"><rect x="60" y="324" width="148" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="134" y="344" text-anchor="middle" dominant-baseline="central">FastAPI service</text>
-        <text class="ts" x="134" y="362" text-anchor="middle" dominant-baseline="central">10 endpoints, CORS</text></g>
-      <g class="node c-gray"><rect x="226" y="324" width="148" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="300" y="344" text-anchor="middle" dominant-baseline="central">Blob Storage</text>
-        <text class="ts" x="300" y="362" text-anchor="middle" dominant-baseline="central">catalog.index + parquets</text></g>
-      <g class="node c-purple"><rect x="392" y="324" width="148" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="466" y="344" text-anchor="middle" dominant-baseline="central">LLM layer</text>
-        <text class="ts" x="466" y="362" text-anchor="middle" dominant-baseline="central">qwen2.5:7b / nemotron</text></g>
-
-      <!-- User entry divider -->
-      <line x1="40" y1="424" x2="640" y2="424" stroke="#D0DCE9" stroke-width="0.5"/>
-      <text class="ts" x="340" y="444" text-anchor="middle" font-weight="500">User entry points — price comparison tool (btaa_demo.html)</text>
-      <line x1="40" y1="450" x2="640" y2="450" stroke="#D0DCE9" stroke-width="0.5"/>
-
-      <!-- Three entry paths -->
-      <g class="node c-teal"><rect x="40" y="464" width="176" height="68" rx="8" stroke-width="0.5"/>
-        <text class="th" x="128" y="486" text-anchor="middle" dominant-baseline="central">Natural language search</text>
-        <text class="ts" x="128" y="504" text-anchor="middle" dominant-baseline="central">Type any description</text>
-        <text class="ts" x="128" y="520" text-anchor="middle" dominant-baseline="central">Autocomplete suggests cat.</text></g>
-      <g class="node c-teal"><rect x="252" y="464" width="176" height="68" rx="8" stroke-width="0.5"/>
-        <text class="th" x="340" y="486" text-anchor="middle" dominant-baseline="central">Browse by category</text>
-        <text class="ts" x="340" y="504" text-anchor="middle" dominant-baseline="central">Category → subcategory</text>
-        <text class="ts" x="340" y="520" text-anchor="middle" dominant-baseline="central">Optional mfr filter</text></g>
-      <g class="node c-teal"><rect x="464" y="464" width="176" height="68" rx="8" stroke-width="0.5"/>
-        <text class="th" x="552" y="486" text-anchor="middle" dominant-baseline="central">Browse by manufacturer</text>
-        <text class="ts" x="552" y="504" text-anchor="middle" dominant-baseline="central">Autocomplete → category</text>
-        <text class="ts" x="552" y="520" text-anchor="middle" dominant-baseline="central">→ product list</text></g>
-
-      <line x1="128" y1="532" x2="128" y2="572" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="340" y1="532" x2="340" y2="572" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="552" y1="532" x2="552" y2="572" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- No match -->
-      <g class="node c-gray"><rect x="40" y="572" width="116" height="44" rx="8" stroke-width="0.5"/>
-        <text class="th" x="98" y="594" text-anchor="middle" dominant-baseline="central">No matches</text></g>
-      <text class="ts" x="98" y="632" text-anchor="middle">Suggest category</text>
-      <text class="ts" x="98" y="646" text-anchor="middle">or broader term</text>
-
-      <!-- Product list -->
-      <g class="node c-blue"><rect x="232" y="572" width="360" height="44" rx="8" stroke-width="0.5"/>
-        <text class="th" x="412" y="588" text-anchor="middle" dominant-baseline="central">Product list — pre-indexed, instant</text>
-        <text class="ts" x="412" y="606" text-anchor="middle" dominant-baseline="central">Sorted by price, all distributors shown</text></g>
-
-      <path d="M156 594 L232 594" fill="none" stroke="#D0DCE9" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
-      <text class="ts" x="194" y="588" text-anchor="middle" fill="#aaa">try browse</text>
-
-      <line x1="412" y1="616" x2="412" y2="650" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Product selection pivot -->
-      <g class="node c-amber"><rect x="172" y="650" width="480" height="52" rx="8" stroke-width="1"/>
-        <text class="th" x="412" y="670" text-anchor="middle" dominant-baseline="central">User selects their current product</text>
-        <text class="ts" x="412" y="688" text-anchor="middle" dominant-baseline="central">This price becomes the baseline — savings calculated against actual cost</text></g>
-
-      <!-- Pipeline divider -->
-      <line x1="40" y1="724" x2="640" y2="724" stroke="#D0DCE9" stroke-width="0.5"/>
-      <text class="ts" x="340" y="744" text-anchor="middle" font-weight="500">Three-tier comparison pipeline (runs automatically on selection)</text>
-      <line x1="40" y1="750" x2="640" y2="750" stroke="#D0DCE9" stroke-width="0.5"/>
-
-      <line x1="412" y1="702" x2="412" y2="762" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Three tiers -->
-      <g class="node c-green"><rect x="40" y="762" width="172" height="72" rx="8" stroke-width="0.5"/>
-        <text class="th" x="126" y="784" text-anchor="middle" dominant-baseline="central">Tier 1 — Exact match</text>
-        <text class="ts" x="126" y="802" text-anchor="middle" dominant-baseline="central">Same mfr + part # dict</text>
-        <text class="ts" x="126" y="818" text-anchor="middle" dominant-baseline="central">Instant, 2ms, no AI</text></g>
-      <g class="node c-blue"><rect x="234" y="762" width="172" height="72" rx="8" stroke-width="0.5"/>
-        <text class="th" x="320" y="784" text-anchor="middle" dominant-baseline="central">Tier 2 — Semantic</text>
-        <text class="ts" x="320" y="802" text-anchor="middle" dominant-baseline="central">bge-small-en-v1.5 embed</text>
-        <text class="ts" x="320" y="818" text-anchor="middle" dominant-baseline="central">FAISS cos ≥ 0.85, 75–110ms</text></g>
-      <g class="node c-purple"><rect x="428" y="762" width="212" height="72" rx="8" stroke-width="0.5"/>
-        <text class="th" x="534" y="784" text-anchor="middle" dominant-baseline="central">Tier 3 — LLM reasoning</text>
-        <text class="ts" x="534" y="802" text-anchor="middle" dominant-baseline="central">Extract baseline unit price</text>
-        <text class="ts" x="534" y="818" text-anchor="middle" dominant-baseline="central">Check type, size, specs, conc.</text></g>
-
-      <!-- LLM sub-nodes -->
-      <g class="node c-purple"><rect x="428" y="852" width="96" height="44" rx="8" stroke-width="0.5"/>
-        <text class="th" x="476" y="874" text-anchor="middle" dominant-baseline="central">qwen2.5:7b</text></g>
-      <g class="node c-purple"><rect x="544" y="852" width="96" height="44" rx="8" stroke-width="0.5"/>
-        <text class="th" x="592" y="874" text-anchor="middle" dominant-baseline="central">nemotron-3</text></g>
-      <line x1="500" y1="834" x2="476" y2="852" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="568" y1="834" x2="592" y2="852" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <text class="ts" x="534" y="848" text-anchor="middle">two models run in parallel</text>
-
-      <!-- Tier arrows converging -->
-      <line x1="126" y1="834" x2="240" y2="922" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="320" y1="834" x2="320" y2="922" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="534" y1="896" x2="400" y2="922" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Results display -->
-      <g class="node c-blue"><rect x="40" y="922" width="600" height="72" rx="8" stroke-width="0.5"/>
-        <text class="th" x="340" y="944" text-anchor="middle" dominant-baseline="central">Results displayed — three labeled tiers</text>
-        <text class="ts" x="340" y="962" text-anchor="middle" dominant-baseline="central">Green = exact matches · Blue = AI-confirmed equivalents · Gray = semantic candidates</text>
-        <text class="ts" x="340" y="978" text-anchor="middle" dominant-baseline="central">Savings shown per unit vs baseline · "No cheaper found" if price is competitive</text></g>
-
-      <line x1="340" y1="994" x2="340" y2="1024" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- User decision -->
-      <g class="node c-amber"><rect x="100" y="1024" width="480" height="44" rx="8" stroke-width="0.5"/>
-        <text class="th" x="340" y="1046" text-anchor="middle" dominant-baseline="central">User reviews · downloads CSV · validates or disregards AI suggestion</text></g>
-
-      <line x1="580" y1="1046" x2="614" y2="1046" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <text class="ts" x="618" y="1042">CSV export</text>
-      <text class="ts" x="618" y="1056">for verification</text>
-
-      <!-- Trends divider -->
-      <line x1="40" y1="1090" x2="640" y2="1090" stroke="#D0DCE9" stroke-width="0.5"/>
-      <text class="ts" x="340" y="1110" text-anchor="middle" font-weight="500">Trends dashboard — spending intelligence (btaa_trends.html)</text>
-      <line x1="40" y1="1116" x2="640" y2="1116" stroke="#D0DCE9" stroke-width="0.5"/>
-
-      <!-- Trends inputs -->
-      <g class="node c-teal"><rect x="40" y="1128" width="180" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="130" y="1148" text-anchor="middle" dominant-baseline="central">unit_normalized_savings</text>
-        <text class="ts" x="130" y="1166" text-anchor="middle" dominant-baseline="central">.parquet — pre-computed</text></g>
-      <g class="node c-gray"><rect x="250" y="1128" width="180" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="340" y="1148" text-anchor="middle" dominant-baseline="central">Exact-match table</text>
-        <text class="ts" x="340" y="1166" text-anchor="middle" dominant-baseline="central">42,052 matched pairs</text></g>
-      <g class="node c-gray"><rect x="460" y="1128" width="180" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="550" y="1148" text-anchor="middle" dominant-baseline="central">Prior-year quantities</text>
-        <text class="ts" x="550" y="1166" text-anchor="middle" dominant-baseline="central">DOT + Neta only</text></g>
-
-      <line x1="130" y1="1180" x2="200" y2="1212" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="340" y1="1180" x2="340" y2="1212" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="550" y1="1180" x2="480" y2="1212" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Trends panels -->
-      <g class="node c-blue"><rect x="40" y="1212" width="176" height="60" rx="8" stroke-width="0.5"/>
-        <text class="th" x="128" y="1233" text-anchor="middle" dominant-baseline="central">Spend concentration</text>
-        <text class="ts" x="128" y="1251" text-anchor="middle" dominant-baseline="central">Top 120 SKUs = 50% spend</text>
-        <text class="ts" x="128" y="1266" text-anchor="middle" dominant-baseline="central">Category &amp; mfr breakdown</text></g>
-      <g class="node c-blue"><rect x="234" y="1212" width="176" height="60" rx="8" stroke-width="0.5"/>
-        <text class="th" x="322" y="1233" text-anchor="middle" dominant-baseline="central">Price spread analysis</text>
-        <text class="ts" x="322" y="1251" text-anchor="middle" dominant-baseline="central">Median 20.7% · 90th pct 95%</text>
-        <text class="ts" x="322" y="1266" text-anchor="middle" dominant-baseline="central">Red = 50%+ gap products</text></g>
-      <g class="node c-blue"><rect x="428" y="1212" width="212" height="60" rx="8" stroke-width="0.5"/>
-        <text class="th" x="534" y="1233" text-anchor="middle" dominant-baseline="central">Top savings opportunities</text>
-        <text class="ts" x="534" y="1251" text-anchor="middle" dominant-baseline="central">$161K confirmed · filter by $</text>
-        <text class="ts" x="534" y="1266" text-anchor="middle" dominant-baseline="central">Download ranked CSV</text></g>
-
-      <line x1="200" y1="1272" x2="200" y2="1308" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="322" y1="1272" x2="322" y2="1308" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <line x1="534" y1="1272" x2="480" y2="1308" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-
-      <!-- Leadership insight -->
-      <g class="node c-green"><rect x="40" y="1308" width="600" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="340" y="1328" text-anchor="middle" dominant-baseline="central">Leadership insight: where to act first</text>
-        <text class="ts" x="340" y="1346" text-anchor="middle" dominant-baseline="central">Identifies products + categories with highest confirmed savings potential</text></g>
-
-      <!-- Feedback loop -->
-      <path d="M640 1334 L658 1334 L658 498 L640 498" fill="none" stroke="#D0DCE9" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
-      <text class="ts" x="672" y="920" text-anchor="middle" transform="rotate(90 672 920)" fill="#aaa">Trends inform search priorities</text>
-
-      <!-- Refresh divider -->
-      <line x1="40" y1="1384" x2="640" y2="1384" stroke="#D0DCE9" stroke-width="0.5"/>
-      <text class="ts" x="340" y="1404" text-anchor="middle" font-weight="500">Catalog refresh &amp; production update cycle</text>
-      <line x1="40" y1="1410" x2="640" y2="1410" stroke="#D0DCE9" stroke-width="0.5"/>
-
-      <!-- Refresh steps -->
-      <g class="node c-gray"><rect x="40" y="1420" width="148" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="114" y="1440" text-anchor="middle" dominant-baseline="central">New Jaggaer export</text>
-        <text class="ts" x="114" y="1458" text-anchor="middle" dominant-baseline="central">Quarterly / new pricing</text></g>
-      <line x1="188" y1="1446" x2="220" y2="1446" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <g class="node c-teal"><rect x="220" y="1420" width="140" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="290" y="1440" text-anchor="middle" dominant-baseline="central">Re-run EDA 1–10</text>
-        <text class="ts" x="290" y="1458" text-anchor="middle" dominant-baseline="central">Rebuild unified.parquet</text></g>
-      <line x1="360" y1="1446" x2="392" y2="1446" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <g class="node c-teal"><rect x="392" y="1420" width="140" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="462" y="1440" text-anchor="middle" dominant-baseline="central">Run Stages 18–19</text>
-        <text class="ts" x="462" y="1458" text-anchor="middle" dominant-baseline="central">Re-normalize, save parquet</text></g>
-      <line x1="532" y1="1446" x2="556" y2="1446" stroke="#7A8999" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
-      <g class="node c-blue"><rect x="556" y="1420" width="84" height="52" rx="8" stroke-width="0.5"/>
-        <text class="th" x="598" y="1440" text-anchor="middle" dominant-baseline="central">Redeploy</text>
-        <text class="ts" x="598" y="1458" text-anchor="middle" dominant-baseline="central">Azure restart</text></g>
-
-      <!-- Conditional FAISS rebuild -->
-      <g class="node c-amber"><rect x="40" y="1494" width="340" height="44" rx="8" stroke-width="0.5"/>
-        <text class="th" x="210" y="1516" text-anchor="middle" dominant-baseline="central">If descriptions changed → re-run Stage 11</text></g>
-      <text class="ts" x="394" y="1516" text-anchor="start" fill="#888">Rebuild FAISS index (~48 min GPU)</text>
-
-    </svg>
-
-    <div class="legend">
-      <div class="legend-item"><div class="legend-swatch sw-teal"></div>Data sources &amp; user entry points</div>
-      <div class="legend-item"><div class="legend-swatch sw-blue"></div>Infrastructure &amp; pipeline steps</div>
-      <div class="legend-item"><div class="legend-swatch sw-purple"></div>AI / LLM components</div>
-      <div class="legend-item"><div class="legend-swatch sw-amber"></div>User decisions &amp; actions</div>
-      <div class="legend-item"><div class="legend-swatch sw-green"></div>Outputs &amp; insights</div>
-      <div class="legend-item"><div class="legend-swatch sw-gray"></div>Neutral / structural</div>
+  <!-- Hero stats -->
+  <div id="overview" style="padding-top:8px"></div>
+  <div class="hero" id="heroStats">
+    <div class="stat-card">
+      <div class="stat-label">Catalog entries</div>
+      <div class="stat-value" id="statRows">—</div>
+      <div class="stat-sub">across 4 distributors</div>
     </div>
-
-    <div class="footnote">
-      BTAA Procurement Intelligence · University of Illinois Urbana-Champaign · June 2025 ·
-      btaa_demo.html + btaa_trends.html + FastAPI on Azure App Service B3
+    <div class="stat-card">
+      <div class="stat-label">Matched products</div>
+      <div class="stat-value" id="statMatched">—</div>
+      <div class="stat-sub">same item, 2+ distributors</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Identified savings floor</div>
+      <div class="stat-value" id="statSavings">—</div>
+      <div class="stat-sub">qty-matched items only</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Median price spread</div>
+      <div class="stat-value" id="statSpread">—</div>
+      <div class="stat-sub">on matched products</div>
     </div>
   </div>
 
+  <!-- Spread distribution + distributor coverage -->
+  <div class="two-col">
+    <div class="card section" id="distributors">
+      <div class="section-head">
+        <span class="section-title">Distributor Coverage</span>
+        <span class="section-sub">rows in catalog</span>
+      </div>
+      <div id="distRows"></div>
+    </div>
+    <div class="card section">
+      <div class="section-head">
+        <span class="section-title">Price Spread Distribution</span>
+        <span class="section-sub">% difference between cheapest and most expensive</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="spreadChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top savings opportunities -->
+  <div class="section" id="opportunities">
+    <div class="section-head">
+      <span class="section-title">Top Savings Opportunities</span>
+      <span class="section-sub">highest estimated prior-year savings — exact part-number match, no AI</span>
+    </div>
+    <div class="card">
+      <div class="bar-list" id="topSavingsBars"></div>
+    </div>
+  </div>
+
+  <!-- Full top-25 table -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">Top 25 by Estimated Annual Savings</span>
+      <span class="section-sub">based on prior-year quantities × price spread — deterministic, no AI required</span>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="opp-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Spread</th>
+            <th>Min Price</th>
+            <th>Max Price</th>
+            <th>Prior Qty</th>
+            <th>Est. Savings</th>
+          </tr>
+        </thead>
+        <tbody id="oppTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- High-spread items (no qty data) -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">High Price Spread — Unknown Volume</span>
+      <span class="section-sub">these products have large spreads but no prior-year quantity on file — savings unknown but likely significant</span>
+    </div>
+    <div class="card">
+      <div class="bar-list" id="highSpreadBars"></div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="section" id="insights">
+    <div class="section-head">
+      <span class="section-title">Key Insights</span>
+      <span class="section-sub">what the data is telling you</span>
+    </div>
+    <div class="three-col">
+      <div class="card">
+        <div class="section-head" style="border-bottom:none;padding-bottom:4px;margin-bottom:8px">
+          <span class="section-title" style="font-size:14px">Where to act first</span>
+        </div>
+        <div class="insight-list" id="insightAction"></div>
+      </div>
+      <div class="card">
+        <div class="section-head" style="border-bottom:none;padding-bottom:4px;margin-bottom:8px">
+          <span class="section-title" style="font-size:14px">Data gaps to close</span>
+        </div>
+        <div class="insight-list" id="insightGaps"></div>
+      </div>
+      <div class="card">
+        <div class="section-head" style="border-bottom:none;padding-bottom:4px;margin-bottom:8px">
+          <span class="section-title" style="font-size:14px">Questions for stakeholders</span>
+        </div>
+        <div class="insight-list" id="insightQuestions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    BTAA Procurement Intelligence &nbsp;·&nbsp; University of Illinois Urbana-Champaign &nbsp;·&nbsp;
+    Data sourced from Jaggaer / UPay exports &nbsp;·&nbsp;
+    Exact part-number matching only — no AI used in this dashboard
+  </div>
+
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const API = 'http://localhost:8080';
+
+// ── Static data from analysis outputs ──────────────────────────────────────
+// This data comes from files 40_value_sizing_partnum.txt and 49_roi_value_sizing.txt
+// It is embedded here so the dashboard works even if the API is slow to load.
+// Update these figures when catalog data is refreshed.
+
+const STATIC = {
+  total_rows: 6068888,
+  matched_keys: 42052,
+  est_savings: 317583, // $317,583 identified savings floor,
+  median_spread_pct: 13.0,
+  mean_spread_pct: 20.9,
+  no_qty_keys: 37535,
+
+  distributors: [
+    { name: 'Neta',   rows: 2112337, has_sales: true,  has_parts: true  },
+    { name: 'VWR',    rows: 2095323, has_sales: false, has_parts: true  },
+    { name: 'Fisher', rows: 1845792, has_sales: false, has_parts: false },
+    { name: 'DOT',    rows: 15436,   has_sales: true,  has_parts: true  },
+  ],
+
+  top25: [
+    { desc: 'External Threaded Cryogenic Vial with Silicone Washer Cap', spread: 267.68, spread_pct: 85.0, min_price: 47.32, max_price: 315.00, qty: 83,  est_savings: 22217 },
+    { desc: 'Internal Threaded Cryogenic Vial with Silcone Washer Cap',  spread: 263.72, spread_pct: 85.2, min_price: 45.68, max_price: 309.40, qty: 38,  est_savings: 10021 },
+    { desc: 'Chemglass Vacuum Pump, Welch, Belt Driven, 300L/Min',       spread: 5366.72,spread_pct: 48.6, min_price: 5683.0,max_price:11049.72,qty: 1,   est_savings: 5367  },
+    { desc: '6 Well Plate, TC Surface, Standard Clear Plate, 5/Pk',      spread: 188.98, spread_pct: 40.0, min_price: 283.44,max_price: 472.42, qty: 28,  est_savings: 5291  },
+    { desc: '75 cm2 Growth Area Flask, TC Surface, U-Shaped Design',     spread: 194.43, spread_pct: 42.5, min_price: 263.12,max_price: 457.55, qty: 27,  est_savings: 5250  },
+    { desc: 'Qorpak 15x45mm 1 Dram (4mL) Clear Borosilicate Vial',      spread: 146.28, spread_pct: 52.5, min_price: 132.22,max_price: 278.50, qty: 31,  est_savings: 4535  },
+    { desc: 'Individually Wrapped Stripette Serological Pipet 25mL',     spread: 22.46,  spread_pct: 16.2, min_price: 115.96,max_price: 138.42, qty: 179, est_savings: 4020  },
+    { desc: 'Cytiva Hyclone Phosphate Buffered Saline Solution 10x',     spread: 62.40,  spread_pct: 74.9, min_price: 20.96, max_price: 83.36,  qty: 60,  est_savings: 3744  },
+    { desc: 'IBI Scientific Replacement Pd1 Buffer 25ml',                spread: 554.84, spread_pct: 96.2, min_price: 21.54, max_price: 576.38, qty: 6,   est_savings: 3329  },
+    { desc: 'PYREX Buret Economy Grade Teflon Locking Stopcock',         spread: 554.33, spread_pct: 78.3, min_price: 153.55,max_price: 707.88, qty: 6,   est_savings: 3326  },
+    { desc: 'BD Syringe Only 1mL 100/Bx 8 Bx/Cs',                       spread: 460.02, spread_pct: 85.4, min_price: 78.20, max_price: 538.22, qty: 7,   est_savings: 3220  },
+    { desc: 'Individually Wrapped Stripette Serological Pipet 10mL',     spread: 24.36,  spread_pct: 18.6, min_price: 106.82,max_price: 131.18, qty: 131, est_savings: 3191  },
+    { desc: 'Perkin Elmer Standard End-Capped THGA Graphite Tubes',      spread: 3064.16,spread_pct: 36.4, min_price: 5356.0,max_price: 8420.16,qty: 1,   est_savings: 3064  },
+    { desc: 'Internal Threaded Cryogenic Vial with Silcone Washer Cap 1.2mL', spread: 357.50, spread_pct: 85.2, min_price: 60.50, max_price: 418.00, qty: 8, est_savings: 2860 },
+    { desc: 'Cytiva Hyclone RPMI 1640 Media Liquid With 25mM HEPES',     spread: 26.52,  spread_pct: 67.0, min_price: 13.08, max_price: 39.60,  qty: 102, est_savings: 2705  },
+    { desc: 'Micrewtube 2.0mL with O-Ring Seal Screw Cap',               spread: 63.76,  spread_pct: 37.4, min_price: 106.70,max_price: 170.46, qty: 42,  est_savings: 2678  },
+    { desc: 'Digital Stirring Hot Plate 120V/60Hz Model PC-420D',        spread: 433.70, spread_pct: 42.1, min_price: 597.90,max_price:1031.60, qty: 6,   est_savings: 2602  },
+    { desc: 'Chemglass CG-4909-04 Storage Vial 4mL Borosilicate',       spread: 58.93,  spread_pct: 44.6, min_price: 73.35, max_price: 132.28, qty: 44,  est_savings: 2593  },
+    { desc: 'Chemglass CG-4905-01 Sample Vial 4mL Borosilicate',        spread: 254.13, spread_pct: 58.5, min_price: 180.43,max_price: 434.56, qty: 10,  est_savings: 2541  },
+    { desc: 'Chemglass CG-4908-01 Storage Vial 20mL Borosilicate',      spread: 50.27,  spread_pct: 38.6, min_price: 79.98, max_price: 130.25, qty: 49,  est_savings: 2463  },
+    { desc: 'ProPette Electronic Pipette Controller with 4 Filters',     spread: 97.48,  spread_pct: 29.4, min_price: 234.10,max_price: 331.58, qty: 24,  est_savings: 2340  },
+    { desc: 'Dukal Corporation Flat Instrument Tray 13-5/8" x 9"',      spread: 464.84, spread_pct: 95.3, min_price: 23.04, max_price: 487.88, qty: 5,   est_savings: 2324  },
+    { desc: 'Cytiva Hyclone Dulbecco PBS Liquid Without Ca/Mg',          spread: 70.71,  spread_pct: 46.4, min_price: 81.80, max_price: 152.51, qty: 32,  est_savings: 2263  },
+    { desc: 'Cytiva Hyclone DMEM High Glucose Without L-Glutamine',      spread: 169.29, spread_pct: 67.3, min_price: 82.28, max_price: 251.57, qty: 13,  est_savings: 2201  },
+    { desc: 'Cytiva Hyclone USDA Import Tested Fetal Bovine Serum 500mL',spread: 236.51, spread_pct: 48.7, min_price: 249.37,max_price: 485.88, qty: 9,   est_savings: 2129  },
+  ],
+
+  high_spread_no_qty: [
+    { desc: 'Chemglass 10L Jacketed Cylindrical Process Filter Reactor', spread: 34370, spread_pct: 58.7, min_price: 24144, max_price: 58514 },
+    { desc: 'Chemglass Jacketed Filter Glass Reactors Single Use',        spread: 34144, spread_pct: 58.9, min_price: 23847, max_price: 57991 },
+    { desc: 'Perkin Elmer Nitrogen Purge Gas Generator Integral Compressor', spread: 28176, spread_pct: 48.3, min_price: 30161, max_price: 58337 },
+    { desc: 'Perkin Elmer Cassette Ion Lens Upgrade Kit ELAN 6x00/9000',  spread: 22991, spread_pct: 71.1, min_price: 9329,  max_price: 32320 },
+    { desc: 'Perkin Elmer Diamond Anvil Cell FTIR Beam Condensers',       spread: 20431, spread_pct: 40.6, min_price: 29886, max_price: 50316 },
+    { desc: 'Chemglass Complete Glass Reactor System Auto-Center',        spread: 19593, spread_pct: 49.1, min_price: 20319, max_price: 39911 },
+    { desc: 'Perkin Elmer Ultra High Purity Generator 60h-Md 500mL/Min', spread: 19425, spread_pct: 41.2, min_price: 27752, max_price: 47176 },
+    { desc: 'Chemglass Complete Reactor System Open Air Auto-Center',     spread: 19304, spread_pct: 49.9, min_price: 19401, max_price: 38706 },
+    { desc: 'Perkin Elmer Ultra High Purity Generator 40h-Md 250mL/Min', spread: 17037, spread_pct: 46.1, min_price: 19947, max_price: 36984 },
+    { desc: 'Perkin Elmer Platinum Sampler Cone ELAN 9000/6x00/DRC',     spread: 16947, spread_pct: 75.3, min_price: 5558,  max_price: 22505 },
+  ],
+};
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+function fmt(n, dec=0) {
+  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function fmtK(n) {
+  if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return '$' + (n/1000).toFixed(0) + 'K';
+  return fmt(n);
+}
+function fmtRows(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return (n/1000).toFixed(0) + 'K';
+  return n.toString();
+}
+function spreadClass(pct) {
+  if (pct >= 50) return 'spread-hi';
+  if (pct >= 25) return 'spread-mid';
+  return 'spread-lo';
+}
+
+// ── Render functions ───────────────────────────────────────────────────────
+function renderHero(d) {
+  document.getElementById('statRows').textContent    = fmtRows(d.total_rows);
+  document.getElementById('statMatched').textContent = fmtRows(d.matched_keys);
+  document.getElementById('statSavings').textContent = fmtK(d.est_savings);
+  document.getElementById('statSpread').textContent  = d.median_spread_pct.toFixed(0) + '%';
+}
+
+function renderDistributors(dists) {
+  const total = dists.reduce((s, d) => s + d.rows, 0);
+  const colors = { Neta: '#2E75B6', VWR: '#1F4E79', Fisher: '#548235', DOT: '#7B4E2D' };
+  document.getElementById('distRows').innerHTML = dists.map(d => {
+    const pct = (100 * d.rows / total).toFixed(1);
+    const color = colors[d.name] || '#666';
+    const tags = [
+      d.has_sales ? '<span style="color:var(--green);font-size:11px">✓ sales history</span>' : '<span style="color:var(--muted);font-size:11px">no sales data</span>',
+      d.has_parts ? '<span style="color:var(--green);font-size:11px">✓ part numbers</span>' : '<span style="color:var(--red);font-size:11px">no part numbers</span>',
+    ].join('&nbsp;&nbsp;');
+    return `<div class="dist-row">
+      <span class="dist-badge dist-${d.name}">${d.name}</span>
+      <div class="dist-info">
+        <div class="dist-name">${d.name} Scientific${d.name==='DOT'?' (DOT)':''}</div>
+        <div class="dist-meta">${fmtRows(d.rows)} rows &nbsp;·&nbsp; ${tags}</div>
+      </div>
+      <div class="dist-share-track" style="max-width:120px">
+        <div class="dist-share-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <span class="dist-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function renderSpreadChart(histogram) {
+  const ctx = document.getElementById('spreadChart').getContext('2d');
+  // Use live histogram from API if available, otherwise use approximation
+  const labels = histogram ? histogram.labels :
+    ['0-10%','10-20%','20-30%','30-40%','40-50%','50-60%','60-75%','75-90%','90-100%'];
+  const counts = histogram ? histogram.counts :
+    [8200, 7100, 5400, 5200, 4800, 3600, 3900, 2600, 1200];
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Products',
+        data: counts,
+        backgroundColor: labels.map((_, i) => i >= 5 ? 'rgba(192,0,0,0.7)' : 'rgba(46,117,182,0.7)'),
+        borderColor:     labels.map((_, i) => i >= 5 ? '#C00000' : '#2E75B6'),
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toLocaleString()} products` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'JetBrains Mono', size: 10 } } },
+        y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderTopSavingsBars(items) {
+  const max = items[0].est_savings;
+  document.getElementById('topSavingsBars').innerHTML = items.slice(0, 12).map(item => `
+    <div class="bar-item">
+      <span class="bar-label" title="${item.desc}">${item.desc.substring(0, 52)}${item.desc.length>52?'...':''}</span>
+      <div class="bar-track">
+        <div class="bar-fill green" style="width:${(100*item.est_savings/max).toFixed(1)}%"></div>
+      </div>
+      <span class="bar-val">${fmtK(item.est_savings)}</span>
+      <span class="bar-pct">${item.spread_pct.toFixed(0)}%</span>
+    </div>`).join('');
+}
+
+function renderOppTable(items) {
+  document.getElementById('oppTableBody').innerHTML = items.map((item, i) => `
+    <tr>
+      <td style="font-family:var(--mono);color:var(--muted);font-size:11px">${i+1}</td>
+      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.desc}">${item.desc}</td>
+      <td><span class="spread-pill ${spreadClass(item.spread_pct)}">${item.spread_pct.toFixed(0)}%</span></td>
+      <td class="num">${fmt(item.min_price, 2)}</td>
+      <td class="num">${fmt(item.max_price, 2)}</td>
+      <td class="num" style="color:var(--muted)">${item.qty ? item.qty.toLocaleString() : '—'}</td>
+      <td class="savings">${fmtK(item.est_savings)}</td>
+    </tr>`).join('');
+}
+
+function renderHighSpreadBars(items) {
+  const max = items[0].spread;
+  document.getElementById('highSpreadBars').innerHTML = items.map(item => `
+    <div class="bar-item">
+      <span class="bar-label" title="${item.desc}">${item.desc.substring(0,52)}${item.desc.length>52?'...':''}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(100*item.spread/max).toFixed(1)}%"></div>
+      </div>
+      <span class="bar-val">${fmtK(item.spread)} gap</span>
+      <span class="bar-pct">${item.spread_pct.toFixed(0)}%</span>
+    </div>`).join('');
+}
+
+function renderInsights(d) {
+  document.getElementById('insightAction').innerHTML = [
+    { cls: 'good', text: `<strong>Cryogenic vials</strong> are the single biggest opportunity — $22K est. annual savings on one part number alone. Pull usage reports for all cryovial SKUs.` },
+    { cls: 'good', text: `<strong>Cell culture consumables</strong> (plates, flasks, media) account for 6 of the top 15 savings items. One distributor switch could cover multiple researchers.` },
+    { cls: '', text: `<strong>Serological pipettes</strong> show 16-18% spreads with high volume (179 units/year observed). Easy win — researchers buy these repeatedly.` },
+  ].map(i => `<div class="insight ${i.cls}">${i.text}</div>`).join('');
+
+  document.getElementById('insightGaps').innerHTML = [
+    { cls: 'warn', text: `<strong>89% of matched products</strong> (37,535 of 42,052) have no prior-year quantity data. Savings estimate of $317K is the conservative floor — true opportunity is much larger.` },
+    { cls: 'warn', text: `<strong>Fisher and VWR</strong> have zero sales history. Their 3.9M combined rows carry unknown spend volume. Requesting purchase history from Jaggaer admin would unlock this.` },
+    { cls: '', text: `<strong>Pack-size normalization</strong> is not yet implemented. Some price comparisons may be per-unit vs per-case. Manual verification recommended for top-10 items before action.` },
+  ].map(i => `<div class="insight ${i.cls}">${i.text}</div>`).join('');
+
+  document.getElementById('insightQuestions').innerHTML = [
+    { cls: '', text: `Can procurement pull <strong>full prior-year quantities</strong> for Fisher and VWR from Jaggaer? This is the single highest-impact data gap.` },
+    { cls: '', text: `Is there a <strong>savings threshold</strong> that would trigger a formal distributor recommendation? A $5K/year item might warrant a policy change.` },
+    { cls: 'warn', text: `Do any top-opportunity products have <strong>sole-source requirements</strong> or contract compliance constraints that would prevent switching?` },
+    { cls: '', text: `What is the <strong>catalog refresh cycle</strong>? Prices change — how often should the system be updated to remain accurate?` },
+  ].map(i => `<div class="insight ${i.cls}">${i.text}</div>`).join('');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  const step = document.getElementById('loadStep');
+  const overlay = document.getElementById('loadingOverlay');
+
+  // Try to get live data from API
+  let data = null;
+  let apiOnline = false;
+
+  try {
+    step.textContent = 'Connecting to API...';
+    const healthR = await fetch(API + '/health', { signal: AbortSignal.timeout(5000) });
+    if (healthR.ok) {
+      apiOnline = true;
+      document.getElementById('apiDot').className = 'dot on';
+      step.textContent = 'Loading live procurement data...';
+
+      const trendsR = await fetch(API + '/trends', { signal: AbortSignal.timeout(30000) });
+      if (trendsR.ok) {
+        data = await trendsR.json();
+        document.getElementById('apiLabel').textContent =
+          `Live data · ${(data.total_rows/1e6).toFixed(1)}M rows`;
+      }
+    }
+  } catch(e) {
+    console.warn('API error:', e);
+  }
+
+  if (!apiOnline) {
+    document.getElementById('apiDot').className = 'dot off';
+    document.getElementById('apiLabel').textContent = 'API offline — static data';
+    document.getElementById('offlineBanner').style.display = 'block';
+  }
+
+  // Fall back to static data if API unavailable
+  const d = data || STATIC;
+
+  step.textContent = 'Rendering dashboard...';
+  await new Promise(r => setTimeout(r, 150));
+
+  renderHero(d);
+  renderDistributors(d.distributors);
+  renderSpreadChart(d.spread_histogram || null);
+  renderTopSavingsBars(d.top25);
+  renderOppTable(d.top25);
+  renderHighSpreadBars(d.high_spread_no_qty);
+  renderInsights(d);
+
+  overlay.classList.add('hidden');
+}
+
+init();
+</script>
 </body>
 </html>

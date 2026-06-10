@@ -1,443 +1,195 @@
-{
-  "version": "1.0",
-  "created": "2025-06-08",
-  "description": "Hand-curated evaluation set for Multi-distributor procurement RAG. Each entry has a query, the expected retrieval tier, the expected cheapest distributor, a price tolerance band, and notes on what makes it a good test case.",
-  "grading_rules": {
-    "tier_match": "Pass if returned tier matches expected_tier",
-    "distributor_match": "Pass if best.distributor matches expected_distributor (case-insensitive)",
-    "price_in_band": "Pass if best.price is within expected_price_min and expected_price_max",
-    "has_alternatives": "Pass if len(alternatives) >= expected_min_alternatives",
-    "parse_success": "Pass if response parses and best is not null",
-    "overall": "Pass requires parse_success + distributor_match + price_in_band"
-  },
-  "queries": [
-    {
-      "id": "E001",
-      "label": "Exact match - Corning centrifuge tube",
-      "query": "50 mL centrifuge tube",
-      "manufacturer": "CORNING",
-      "part_number": "430829",
-      "expected_tier": "exact",
-      "expected_distributor": null,
-      "expected_price_min": 30,
-      "expected_price_max": 200,
-      "expected_min_alternatives": 1,
-      "category": "plasticware",
-      "notes": "High-volume item, appears in Stage 8 top-25 savings. Exact match should fire. Distributor varies - just check price is reasonable and alternatives exist."
-    },
-    {
-      "id": "E002",
-      "label": "Exact match - Cryogenic vial top savings item",
-      "query": "cryogenic vial external thread silicone washer cap",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 50,
-      "expected_price_max": 400,
-      "expected_min_alternatives": 1,
-      "category": "plasticware",
-      "notes": "Top item by savings in Stage 8 (85% spread). Semantic tier since no part# provided. Key test: are candidates all cryogenic vials, not random plasticware?"
-    },
-    {
-      "id": "E003",
-      "label": "Serological pipette - 5 mL sterile",
-      "query": "5 mL sterile serological pipette polystyrene",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 40,
-      "expected_price_max": 220,
-      "expected_min_alternatives": 2,
-      "category": "pipettes",
-      "notes": "Pilot query from Stage 10 - ground truth retrieval is known good. Best reference for regression testing. Should return 8+ candidates across DOT/Neta/VWR."
-    },
-    {
-      "id": "E004",
-      "label": "Serological pipette - 10 mL individually wrapped",
-      "query": "10 mL serological pipet individually wrapped",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 55,
-      "expected_price_max": 200,
-      "expected_min_alternatives": 2,
-      "category": "pipettes",
-      "notes": "Second pilot query from Stage 10. Tests that 10 mL and 5 mL pipettes are kept separate - LLM should NOT mix sizes."
-    },
-    {
-      "id": "E005",
-      "label": "Serological pipette - 25 mL disposable",
-      "query": "25 mL disposable serological pipette",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 90,
-      "expected_price_max": 470,
-      "expected_min_alternatives": 1,
-      "category": "pipettes",
-      "notes": "Third pilot query. Price range is wide because glass vs plastic variants exist at very different prices. LLM should group by material."
-    },
-    {
-      "id": "E006",
-      "label": "Stripette pipet - known top-25 savings item",
-      "query": "individually wrapped Stripette serological pipet paper plastic sleeve",
-      "manufacturer": "CORNING",
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 20,
-      "expected_price_max": 120,
-      "expected_min_alternatives": 1,
-      "category": "pipettes",
-      "notes": "Appears in Stage 8 top-25 by savings ($4,020 est. prior-year). Good test of whether manufacturer hint improves retrieval without part#."
-    },
-    {
-      "id": "E007",
-      "label": "1000 uL pipette tips - filter sterile",
-      "query": "1000 uL filter pipette tips sterile",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 20,
-      "expected_price_max": 150,
-      "expected_min_alternatives": 2,
-      "category": "pipette_tips",
-      "notes": "High-frequency category. Key failure mode: returning 200 uL tips mixed with 1000 uL. LLM must hold volume constant."
-    },
-    {
-      "id": "E008",
-      "label": "200 uL pipette tips - low retention",
-      "query": "200 uL low retention pipette tips",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 15,
-      "expected_price_max": 100,
-      "expected_min_alternatives": 1,
-      "category": "pipette_tips",
-      "notes": "Tests size separation from E007. If both return same best item, the retrieval or LLM is conflating sizes."
-    },
-    {
-      "id": "E009",
-      "label": "PBS - Cytiva Hyclone known item",
-      "query": "Cytiva Hyclone phosphate buffered saline PBS 10x",
-      "manufacturer": "CYTIVA",
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 30,
-      "expected_price_max": 120,
-      "expected_min_alternatives": 1,
-      "category": "reagents",
-      "notes": "Appears in Stage 8 top-25 ($3,744 est. savings). Good manufacturer-name normalization test: Cytiva vs HyClone vs Cytiva HyClone are all the same company."
-    },
-    {
-      "id": "E010",
-      "label": "DMEM high glucose media",
-      "query": "Cytiva Hyclone Dulbecco Modified Eagle Medium DMEM high glucose",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 20,
-      "expected_price_max": 80,
-      "expected_min_alternatives": 1,
-      "category": "cell_culture",
-      "notes": "Appears in Stage 8 top-25. Tests whether liquid media items are matched correctly. DMEM and RPMI should not be mixed."
-    },
-    {
-      "id": "E011",
-      "label": "RPMI 1640 with HEPES",
-      "query": "RPMI 1640 media liquid with 25 mM HEPES",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 15,
-      "expected_price_max": 60,
-      "expected_min_alternatives": 1,
-      "category": "cell_culture",
-      "notes": "Appears in Stage 8 top-25 ($2,705 est. savings). Separation test from E010 - should NOT return DMEM results."
-    },
-    {
-      "id": "E012",
-      "label": "6 well plate tissue culture treated",
-      "query": "6 well plate tissue culture treated surface",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 40,
-      "expected_price_max": 200,
-      "expected_min_alternatives": 1,
-      "category": "cell_culture",
-      "notes": "Appears in Stage 8 top-25 ($5,291 est. savings). Pack-size trap: per-plate vs per-case pricing. LLM must flag or normalize."
-    },
-    {
-      "id": "E013",
-      "label": "T-75 flask tissue culture",
-      "query": "75 cm2 tissue culture flask T-75 TC surface",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 50,
-      "expected_price_max": 280,
-      "expected_min_alternatives": 1,
-      "category": "cell_culture",
-      "notes": "Appears in Stage 8 top-25 ($5,249 est. savings). Tests flask vs plate disambiguation."
-    },
-    {
-      "id": "E014",
-      "label": "Fetal bovine serum - Cytiva Hyclone",
-      "query": "Cytiva Hyclone fetal bovine serum FBS 500 mL",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 150,
-      "expected_price_max": 600,
-      "expected_min_alternatives": 1,
-      "category": "reagents",
-      "notes": "Stage 8 top-25 ($2,128 est. savings). High-value reagent. Tests that FBS and other sera are kept distinct."
-    },
-    {
-      "id": "E015",
-      "label": "1 mL BD syringe",
-      "query": "BD syringe only 1 mL",
-      "manufacturer": "BD",
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 15,
-      "expected_price_max": 80,
-      "expected_min_alternatives": 1,
-      "category": "disposables",
-      "notes": "Stage 8 top-25 ($3,220 est. savings, 85% spread). Tests BD manufacturer normalization (BD vs Becton Dickinson). Critical: 1 mL vs 3 mL vs 10 mL syringes must not mix."
-    },
-    {
-      "id": "E016",
-      "label": "Chemglass storage vial 4 mL borosilicate",
-      "query": "Chemglass storage vial 4 mL borosilicate glass screw cap",
-      "manufacturer": "CHEMGLASS",
-      "part_number": "CG-4909-04",
-      "expected_tier": "exact",
-      "expected_distributor": null,
-      "expected_price_min": 30,
-      "expected_price_max": 200,
-      "expected_min_alternatives": 1,
-      "category": "glassware",
-      "notes": "Stage 8 top-25 with known part number. Tests exact-match path for glassware. Chemglass is a manufacturer that appeared in the wrong-merge risk case (Stage 44)."
-    },
-    {
-      "id": "E017",
-      "label": "Microcentrifuge tube 2 mL O-ring screw cap",
-      "query": "2 mL microcentrifuge tube O-ring seal screw cap",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 20,
-      "expected_price_max": 150,
-      "expected_min_alternatives": 1,
-      "category": "plasticware",
-      "notes": "Stage 8 top-25 ($2,677 est. savings). Pack-size trap - per-tube vs per-case."
-    },
-    {
-      "id": "E018",
-      "label": "Electronic pipette controller",
-      "query": "electronic pipette controller with filters",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 100,
-      "expected_price_max": 600,
-      "expected_min_alternatives": 1,
-      "category": "instruments",
-      "notes": "Stage 8 top-25 ($2,339 est. savings). Tests instrument matching - these descriptions vary a lot across distributors."
-    },
-    {
-      "id": "E019",
-      "label": "Qorpak clear borosilicate vial 4 mL",
-      "query": "Qorpak 4 mL clear borosilicate vial 13-425 closure",
-      "manufacturer": "QORPAK",
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 30,
-      "expected_price_max": 150,
-      "expected_min_alternatives": 1,
-      "category": "glassware",
-      "notes": "Stage 8 top-25 ($4,534 est. savings). Tests a smaller manufacturer name - Qorpak may not be well-known to the model."
-    },
-    {
-      "id": "E020",
-      "label": "Ambiguous query - just pipettes",
-      "query": "pipettes",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": null,
-      "expected_price_max": null,
-      "expected_min_alternatives": 0,
-      "category": "stress_test",
-      "notes": "Intentionally vague. Should return results without crashing. Price band not checked - just verify parse_success and no server error. Tests graceful handling of under-specified queries."
-    },
-    {
-      "id": "E021",
-      "label": "Nonsense query",
-      "query": "xylophone quantum flux capacitor banana",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "no_results",
-      "expected_distributor": null,
-      "expected_price_min": null,
-      "expected_price_max": null,
-      "expected_min_alternatives": 0,
-      "category": "stress_test",
-      "notes": "Should return no_results or very low-confidence candidates. Tests graceful failure. Pass = no server error AND best is null OR price is unreasonably high."
-    },
-    {
-      "id": "E022",
-      "label": "Fisher-style terse query",
-      "query": "ANTI-CBF-BETA antibody",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": null,
-      "expected_price_max": null,
-      "expected_min_alternatives": 0,
-      "category": "stress_test",
-      "notes": "Mimics Fisher's terse description style. Tests whether the system handles sparse query terms. Pass = no crash. Tracks the known Fisher description quality gap."
-    },
-    {
-      "id": "E023",
-      "label": "Wrong manufacturer name spelling",
-      "query": "Cornnig 50 mL centrifuge tube",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 30,
-      "expected_price_max": 200,
-      "expected_min_alternatives": 0,
-      "category": "stress_test",
-      "notes": "Typo in manufacturer name. Vector search should still find centrifuge tubes. Tests robustness to misspellings. Pass = centrifuge tube results returned."
-    },
-    {
-      "id": "E024",
-      "label": "Lab supplies - category disambiguation",
-      "query": "sterile 1.5 mL microcentrifuge tubes",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 10,
-      "expected_price_max": 100,
-      "expected_min_alternatives": 1,
-      "category": "plasticware",
-      "notes": "1.5 mL microtubes are very common. Tests that 1.5 mL and 2.0 mL tubes are not merged by the LLM. High candidate count expected."
-    },
-    {
-      "id": "E025",
-      "label": "Specific antibody query",
-      "query": "rat CD44 antibody 50 ug",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": null,
-      "expected_price_max": null,
-      "expected_min_alternatives": 0,
-      "category": "reagents",
-      "notes": "Antibody category has low coherence (file 43). Tests retrieval in a junk-drawer category. Pass = no crash. Secondary check: did retrieval return anything in the Antibodies UNSPSC code?"
-    },
-    {
-      "id": "E026",
-      "label": "Multi-word brand + product",
-      "query": "Thermo Scientific Nunc CryoTube vials 1.8 mL",
-      "manufacturer": "THERMO FISHER SCIENTIFIC",
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 40,
-      "expected_price_max": 300,
-      "expected_min_alternatives": 1,
-      "category": "plasticware",
-      "notes": "Tests Thermo/Nunc brand disambiguation. Thermo Scientific, Thermo Fisher, and Nunc are different name variants for overlapping products. Canonical mfr normalization matters here."
-    },
-    {
-      "id": "E027",
-      "label": "LC column - niche coherent category",
-      "query": "LC C8 reverse phase HPLC column 4.6 mm",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 100,
-      "expected_price_max": 1000,
-      "expected_min_alternatives": 0,
-      "category": "instruments",
-      "notes": "LC C8 Columns is the highest-coherence category (file 42, intra_cohesion=0.833). Should have clean retrieval. Tests the high end of the quality spectrum."
-    },
-    {
-      "id": "E028",
-      "label": "High price item - Perkin Elmer instrument",
-      "query": "Perkin Elmer graphite tubes THGA with integrated platform",
-      "manufacturer": "PERKIN ELMER",
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 500,
-      "expected_price_max": 5000,
-      "expected_min_alternatives": 0,
-      "category": "instruments",
-      "notes": "High-value instrument item from Stage 8 top-25 raw spread list ($3,064 est. savings). Tests that large price spreads are handled correctly."
-    },
-    {
-      "id": "E029",
-      "label": "Speed test - should hit cache on second call",
-      "query": "5 mL sterile serological pipette polystyrene",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 40,
-      "expected_price_max": 220,
-      "expected_min_alternatives": 2,
-      "category": "regression",
-      "notes": "Identical to E003. Run this AFTER E003. On second call, LLM response should come from cache and elapsed_ms should drop by 80%+. Tests caching behavior."
-    },
-    {
-      "id": "E030",
-      "label": "Pack size confusion trap",
-      "query": "serological pipette 5 mL case 200",
-      "manufacturer": null,
-      "part_number": null,
-      "expected_tier": "semantic",
-      "expected_distributor": null,
-      "expected_price_min": 40,
-      "expected_price_max": 220,
-      "expected_min_alternatives": 1,
-      "category": "regression",
-      "notes": "Explicit pack size in query. Tests whether the LLM correctly distinguishes per-unit price from per-case price. This is the known weak spot (pack-size normalization not yet implemented). Log the reasoning field - it should mention pack size."
-    }
-  ],
-  "grading_script_notes": "To run: load this JSON, call ask_procurement() or POST /search for each entry, compare response fields against expected_* fields using grading_rules above. Log pass/fail per rule per query. Target: 80%+ overall pass rate before shipping to stakeholders.",
-  "known_weaknesses_to_watch": [
-    "E022: Fisher terse descriptions - recall will be low",
-    "E025: Antibody junk-drawer category - retrieval quality unpredictable",
-    "E030: Pack-size normalization not implemented - LLM may conflate unit vs case prices",
-    "E012/E013/E017: Cell culture items with per-unit vs per-case pricing",
-    "E027: Instrument columns - low volume in catalog, may have thin candidates"
-  ]
-}
+# Procurement Intelligence System Design
+
+**End-to-end AI system for identifying cost-saving opportunities across multi-vendor purchasing catalogs.**
+
+A three-tier pipeline that processes millions of catalog rows from multiple distributors using deterministic exact matching, FAISS semantic retrieval, and LLM equivalence reasoning with pack-size normalization. Includes a live price comparison tool and a leadership-facing spending intelligence dashboard.
+
+**Portfolio case study:** [taylererbe.com/procurement-intelligence](https://terbe2022.github.io/tayler-portfolio/procurement-intelligence.html)  
+**Medium article:** [Stop Throwing AI at Your Messy Data](https://medium.com/@tayler.erbe)
+
+---
+
+## What this repository contains
+
+This is a **system design reference implementation** — the architecture, pipeline logic, API, and client interfaces. The data (6M+ catalog rows, FAISS index, parquet files) is not included and cannot be shared.
+
+| File | Description |
+|---|---|
+| `BTAA_RAG_v1.ipynb` | Main RAG notebook — data loading, FAISS index, exact-match dict, LLM pipeline (Stages 11–19) |
+| `btaa_api/main.py` | FastAPI service — 10 endpoints including three-tier compare, browse by category/manufacturer, trends |
+| `btaa_api/requirements.txt` | Python dependencies |
+| `demo.html` | Price comparison UI — search, browse by category, browse by manufacturer, auto-compare |
+| `trends_dashboard.html` | Spending intelligence dashboard — 10 embedded spend analysis charts, savings filter, CSV export |
+| `system_architecture.html` | Standalone system architecture diagram |
+| `eval_set.json` | 30 hand-curated test queries with expected tier, price range, and alternatives |
+| `eval_runner.py` | Evaluation grading script — runs against live API, produces pass rate report |
+| `roi_0*.png` | Unit-normalized ROI charts |
+
+---
+
+## Core architecture
+
+```
+Multi-vendor catalog data (millions of rows)
+           │
+           ▼
+┌─────────────────────────────┐
+│  Preprocessing               │
+│  - Unit normalization (qsu)  │
+│  - Exact-match dict build    │
+│  - FAISS vector index        │
+└─────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────────────────────┐
+│  Three-Tier Comparison Pipeline                          │
+│                                                          │
+│  Tier 1: Exact match (mfr + part#)  →  2ms, no AI       │
+│  Tier 2: FAISS semantic retrieval   →  75–110ms          │
+│  Tier 3: LLM equivalence reasoning  →  5–8s              │
+│                                                          │
+│  Degrades gracefully — Tier 1 always runs offline        │
+└─────────────────────────────────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│  FastAPI service (10 endpoints) │
+│  + HTML client interfaces    │
+└─────────────────────────────┘
+```
+
+**The design principle:** lead with what is deterministic. Exact part-number matching requires no AI and produces the most defensible savings estimates. Semantic retrieval narrows millions of rows to ~20–40 candidates. The LLM only sees that small pre-screened set — it reasons, it does not search.
+
+---
+
+## Key metrics (reference implementation)
+
+| Metric | Value |
+|---|---|
+| Catalog rows processed | 6,068,888 |
+| Exact-matched product pairs | 42,052 |
+| Defensible savings (unit-normalized) | $161,564 |
+| Pack-size inflation removed from raw figure | 49.1% |
+| Median unit-price spread | 20.7% |
+| FAISS index size | 5.19M vectors, 8GB |
+| Tier 1 latency | < 2ms |
+| Tier 2 latency | 75–110ms |
+| Tier 3 latency | 5–8s |
+
+---
+
+## Running the system
+
+### Prerequisites
+
+```bash
+conda create -n procurement python=3.11
+conda activate procurement
+pip install -r btaa_api/requirements.txt
+```
+
+You will need:
+- `parquet/unified.parquet` — your catalog data (build from source exports)
+- `rag_index/catalog.index` — FAISS index (built by notebook Stage 11)
+- `rag_index/catalog_meta.parquet` — vector metadata
+- Ollama running locally with qwen2.5:7b
+
+### Start Ollama (keep open)
+```bash
+ollama run qwen2.5:7b
+# Wait for >>> prompt
+```
+
+### Start the API
+```bash
+uvicorn btaa_api.main:app --reload --port 8080
+# Startup: ~5 min (loads data, builds browse index, indexes manufacturers)
+# Watch for: Startup complete. Ready to serve requests.
+```
+
+### Open the tools
+Double-click `demo.html` and `trends_dashboard.html` in any browser.
+
+### Run the eval suite
+```bash
+python eval_runner.py
+# Options:
+# --category exact        (exact-match queries only)
+# --category semantic     (semantic queries only)
+# --out results.txt       (custom output path)
+```
+
+---
+
+## Adapting to your data
+
+The system expects a unified parquet file with these columns:
+
+| Column | Description |
+|---|---|
+| `distributor` | Vendor name |
+| `manufacturer` | Manufacturer name |
+| `description` | Product description text |
+| `price_num` | Numeric price |
+| `dist_catalog_num` | Vendor catalog number |
+| `manufacturer_part_num` | Manufacturer part number (enables exact matching) |
+| `qsu` | Quantity sold as — used for unit price normalization |
+| `qty` | Prior-year purchase quantity (enables savings estimates) |
+| `category_desc` | UNSPSC or equivalent category label |
+
+To build from your own vendor exports, adapt the EDA notebook (`Jaggaer_Data_EDA_v2.ipynb` equivalent) to normalize and merge your sources into this schema.
+
+---
+
+## LLM configuration
+
+The system supports two LLM backends. Configure in `btaa_api/main.py`:
+
+```python
+# Local inference (Ollama)
+OLLAMA_URL   = "http://localhost:11434/v1"
+OLLAMA_MODEL = "qwen2.5:7b"
+
+# Remote inference (NIM or any OpenAI-compatible endpoint)
+NIM_URL   = "http://your-nim-server:8000/v1"
+NIM_MODEL = "nvidia/nemotron-3-nano"
+```
+
+The API health-checks both at startup and uses whichever is online. Falls back gracefully to exact-match-only when no LLM is available.
+
+For Azure deployment, replace with Azure OpenAI:
+```python
+OLLAMA_URL   = "https://your-resource.openai.azure.com/openai/deployments/gpt-4o-mini/v1"
+OLLAMA_MODEL = "gpt-4o-mini"
+```
+
+---
+
+## Production deployment (Azure)
+
+| Component | Service | Est. cost/month |
+|---|---|---|
+| FastAPI app | App Service B3 (8GB RAM min) | ~$75 |
+| FAISS index + parquet | Blob Storage 10GB | ~$0.20 |
+| LLM | Azure OpenAI gpt-4o-mini | ~$2 |
+| **Total** | | **~$77/month** |
+
+---
+
+## Technical decisions
+
+| Decision | Chosen | Rationale |
+|---|---|---|
+| Embedding model | bge-small-en-v1.5 (384-dim) | 8GB index vs 32GB for large variant; quality comparable |
+| FAISS threshold | cos ≥ 0.85 | Median 44 candidates, max 137 — safe LLM context budget |
+| LLM | qwen2.5:7b | 4/4 correctness, 4/4 consistency on domain eval set |
+| Savings baseline | User-selected product | Anchors to real price, eliminates pack-size ambiguity |
+| Unit price | price / qsu | 99.9% field coverage; removes pack-size inflation |
+| Browse pre-indexing | Startup-time (adds ~30s) | Makes all browse operations instant |
+
+---
+
+## Author
+
+**Tayler Erbe** — Data Scientist  
+[taylererbe.com](https://terbe2022.github.io/tayler-portfolio/) · [LinkedIn](https://linkedin.com/in/tayler-erbe-194374141) · [Medium](https://medium.com/@tayler.erbe)
